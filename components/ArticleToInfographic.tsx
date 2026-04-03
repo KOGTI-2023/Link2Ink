@@ -7,7 +7,7 @@
 import React, { useState } from 'react';
 import { generateArticleInfographic } from '../services/geminiService';
 import { Citation, ArticleHistoryItem } from '../types';
-import { Link, Loader2, Download, Sparkles, AlertCircle, Palette, Globe, ExternalLink, BookOpen, Clock, Maximize } from 'lucide-react';
+import { Link, Loader2, Download, Sparkles, AlertCircle, Palette, Globe, ExternalLink, BookOpen, Clock, Maximize, Database } from 'lucide-react';
 import { LoadingState } from './LoadingState';
 import ImageViewer from './ImageViewer';
 
@@ -67,6 +67,7 @@ const ArticleToInfographic: React.FC<ArticleToInfographicProps> = ({ history, on
   const [citations, setCitations] = useState<Citation[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loadingStage, setLoadingStage] = useState('');
+  const [isCachedResult, setIsCachedResult] = useState(false);
   
   // Viewer State
   const [fullScreenImage, setFullScreenImage] = useState<{src: string, alt: string} | null>(null);
@@ -121,15 +122,42 @@ const ArticleToInfographic: React.FC<ArticleToInfographicProps> = ({ history, on
         setError(validationError);
         return;
     }
+
+    // Pre-flight network check (best effort due to CORS)
+    try {
+        await fetch(urlInput, { mode: 'no-cors' });
+    } catch (err) {
+        setError("Netzwerkfehler: Die URL ist nicht erreichbar. Bitte prüfen Sie Ihre Verbindung oder die Adresse.");
+        return;
+    }
+    
+    const styleToUse = selectedStyle === 'Custom' ? customStyle : selectedStyle;
+    const cacheKey = `link2ink_cache_${urlInput}_${styleToUse}_${selectedLanguage}`;
+    
+    const cached = localStorage.getItem(cacheKey);
+    if (cached) {
+        try {
+            const parsed = JSON.parse(cached);
+            if (parsed.imageData && parsed.citations) {
+                setImageData(parsed.imageData);
+                setCitations(parsed.citations);
+                setIsCachedResult(true);
+                setError(null);
+                return;
+            }
+        } catch (e) {
+            localStorage.removeItem(cacheKey);
+        }
+    }
     
     setLoading(true);
     setError(null);
     setImageData(null);
     setCitations([]);
+    setIsCachedResult(false);
     setLoadingStage('INITIALIZING...');
 
     try {
-      const styleToUse = selectedStyle === 'Custom' ? customStyle : selectedStyle;
       const { imageData: resultImage, citations: resultCitations } = await generateArticleInfographic(urlInput, styleToUse, (stage) => {
           setLoadingStage(stage);
       }, selectedLanguage);
@@ -138,6 +166,24 @@ const ArticleToInfographic: React.FC<ArticleToInfographicProps> = ({ history, on
           setImageData(resultImage);
           setCitations(resultCitations);
           addToHistory(urlInput, resultImage, resultCitations);
+          
+          try {
+              localStorage.setItem(cacheKey, JSON.stringify({ imageData: resultImage, citations: resultCitations }));
+          } catch (storageErr: any) {
+              if (storageErr.name === 'QuotaExceededError') {
+                  const keysToRemove = [];
+                  for (let i = 0; i < localStorage.length; i++) {
+                      const key = localStorage.key(i);
+                      if (key && key.startsWith('link2ink_cache_')) {
+                          keysToRemove.push(key);
+                      }
+                  }
+                  keysToRemove.forEach(k => localStorage.removeItem(k));
+                  try {
+                      localStorage.setItem(cacheKey, JSON.stringify({ imageData: resultImage, citations: resultCitations }));
+                  } catch (e) {}
+              }
+          }
       } else {
           throw new Error("Die Bildgenerierung ist fehlgeschlagen. Versuchen Sie es mit einer anderen URL oder einem anderen Stil.");
       }
@@ -211,26 +257,25 @@ const ArticleToInfographic: React.FC<ArticleToInfographicProps> = ({ history, on
             {/* Style & Language Controls */}
             <div className="grid md:grid-cols-2 gap-6">
                 {/* Style Selector */}
-                <div className="space-y-4">
+                <div className="space-y-4 min-w-0">
                      <label className="text-xs text-emerald-400 font-mono tracking-wider flex items-center gap-2">
                         <Palette className="w-4 h-4" /> KÜNSTLERISCHER_STIL
                     </label>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                        {SKETCH_STYLES.map(style => (
-                            <button
-                                key={style.name}
-                                type="button"
-                                onClick={() => setSelectedStyle(style.name)}
-                                className={`py-2 px-2 rounded-xl font-mono text-[10px] sm:text-[11px] transition-all border whitespace-nowrap truncate ${
-                                    selectedStyle === style.name 
-                                    ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' 
-                                    : 'bg-slate-900/50 text-slate-500 border-white/5 hover:border-white/10 hover:text-slate-300'
-                                }`}
-                                title={style.description}
-                            >
-                                {style.name}
-                            </button>
-                        ))}
+                    <div className="relative w-full min-w-0">
+                        <select
+                            value={selectedStyle}
+                            onChange={(e) => setSelectedStyle(e.target.value)}
+                            className="w-full bg-slate-900/50 border border-white/10 rounded-xl px-4 py-3 text-sm text-slate-300 focus:ring-1 focus:ring-emerald-500/50 focus:border-emerald-500/50 font-mono appearance-none cursor-pointer hover:bg-white/5 transition-colors truncate pr-8"
+                        >
+                             {SKETCH_STYLES.map((style) => (
+                                <option key={style.name} value={style.name} className="bg-slate-900 text-slate-300" title={style.description}>
+                                    {style.name}
+                                </option>
+                             ))}
+                        </select>
+                         <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-500">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                        </div>
                     </div>
                      {selectedStyle === 'Custom' && (
                          <input 
@@ -295,6 +340,11 @@ const ArticleToInfographic: React.FC<ArticleToInfographicProps> = ({ history, on
             <div className="px-6 py-4 flex items-center justify-between border-b border-white/5 mb-1.5 bg-slate-950/30 rounded-t-2xl">
                 <h3 className="text-sm font-bold text-white flex items-center gap-2 font-mono uppercase tracking-wider">
                   <Sparkles className="w-4 h-4 text-emerald-400" /> Generiertes_Ergebnis
+                  {isCachedResult && (
+                      <span className="ml-2 px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] flex items-center gap-1" title="Aus dem lokalen Cache geladen">
+                          <Database className="w-3 h-3" /> CACHED
+                      </span>
+                  )}
                 </h3>
                 <div className="flex items-center gap-2">
                     <button 
