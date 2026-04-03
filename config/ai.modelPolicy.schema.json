@@ -1,0 +1,63 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "AI Model Policy Configuration",
+  "type": "object",
+  "properties": {
+    "commercialMode": {
+      "type": "boolean",
+      "description": "Whether the app requires paid keys and billing checks."
+    },
+    "region": {
+      "type": "string",
+      "default": "us-central1"
+    },
+    "defaults": {
+      "type": "object",
+      "properties": {
+        "uiLocale": { "type": "string", "default": "en-US" },
+        "outputLanguagePolicy": { "enum": ["match_query", "match_ui", "fixed"], "default": "match_ui" }
+      }
+    },
+    "capabilities": {
+      "type": "object",
+      "patternProperties": {
+        "^[a-zA-Z]+$": {
+          "type": "object",
+          "properties": {
+            "defaultModel": { "type": "string" },
+            "allowedModels": { "type": "array", "items": { "type": "string" } },
+            "qualityTier": { "enum": ["standard", "high", "ultra"], "default": "standard" },
+            "maxCostPerRequest": { "type": "number" }
+          }
+        }
+      }
+    },
+    "pricingTable": {
+      "type": "object",
+      "properties": {
+        "currency": { "type": "string", "default": "USD" },
+        "models": {
+          "type": "object",
+          "patternProperties": {
+            ".*": {
+              "type": "object",
+              "properties": {
+                "inputPricePer1M": { "type": "number" },
+                "outputPricePer1M": { "type": "number" },
+                "perImagePrice": { "type": "number" },
+                "perSecondPrice": { "type": "number" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "budgetGuardrails": {
+      "type": "object",
+      "properties": {
+        "dailyBudgetUSD": { "type": "number" },
+        "alertThresholdPercent": { "type": "number", "default": 80 }
+      }
+    }
+  }
+}
