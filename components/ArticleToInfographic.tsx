@@ -17,21 +17,26 @@ interface ArticleToInfographicProps {
 }
 
 const SKETCH_STYLES = [
-    "Modern Editorial",
-    "Fun & Playful",
-    "Clean Minimalist",
-    "Dark Mode Tech",
-    "Corporate Professional",
-    "Hand-Drawn Sketchnote",
-    "Retro Pixel Art",
-    "Watercolor Artistic",
-    "Abstract Geometric",
-    "Futuristic ISO",
-    "Paper Cutout",
-    "Pop Art",
-    "Vintage Newspaper",
-    "Cyberpunk Glow",
-    "Custom"
+    { name: "Modern Editorial", description: "High-end magazine illustration, flat design, cohesive mature color palette." },
+    { name: "Fun & Playful", description: "Vibrant 2D vector illustrations, rounded shapes, friendly tone." },
+    { name: "Clean Minimalist", description: "Ultra-minimalist, maximum whitespace, thin geometric lines." },
+    { name: "Dark Mode Tech", description: "Dark slate background, glowing neon highlights, data-driven aesthetic." },
+    { name: "Corporate Professional", description: "Trustworthy business style, navy blues and greys, structured grid." },
+    { name: "Hand-Drawn Sketchnote", description: "Hand-drawn marker on whiteboard style, casual doodles." },
+    { name: "Retro Pixel Art", description: "8-bit or 16-bit retro aesthetic, blocky pixel fonts." },
+    { name: "Watercolor Artistic", description: "Soft hand-painted watercolor textures, fluid edges." },
+    { name: "Abstract Geometric", description: "Bauhaus influence, bold primary color shapes." },
+    { name: "Futuristic ISO", description: "3D isometric perspective, high-tech blueprint look, glass textures." },
+    { name: "Paper Cutout", description: "Layered paper-cut aesthetic, physical shadows between elements." },
+    { name: "Pop Art", description: "High-contrast comic style, Ben-Day dots, bold black outlines." },
+    { name: "Vintage Newspaper", description: "Aged newsprint texture, monochromatic ink, classical typography." },
+    { name: "Cyberpunk Glow", description: "Neon-noir aesthetic, intense magenta and electric blue, glitch effects." },
+    { name: "Steampunk Brass", description: "Victorian industrial aesthetic, brass gears, sepia tones, copper pipes." },
+    { name: "Synthwave 80s", description: "Retro-futuristic 80s style, neon grids, synth sunsets, chrome text." },
+    { name: "Origami Fold", description: "Folded paper aesthetic, sharp geometric shadows, clean pastel colors." },
+    { name: "Stained Glass", description: "Vibrant mosaic of colored glass panes separated by dark lead lines." },
+    { name: "Chalkboard Sketch", description: "Dusty blackboard background with white and colored chalk illustrations." },
+    { name: "Custom", description: "Define your own unique visual style." }
 ];
 
 const LANGUAGES = [
@@ -54,7 +59,7 @@ const LANGUAGES = [
 
 const ArticleToInfographic: React.FC<ArticleToInfographicProps> = ({ history, onAddToHistory }) => {
   const [urlInput, setUrlInput] = useState('');
-  const [selectedStyle, setSelectedStyle] = useState(SKETCH_STYLES[0]);
+  const [selectedStyle, setSelectedStyle] = useState(SKETCH_STYLES[0].name);
   const [selectedLanguage, setSelectedLanguage] = useState(LANGUAGES[0].value);
   const [customStyle, setCustomStyle] = useState('');
   const [loading, setLoading] = useState(false);
@@ -138,12 +143,22 @@ const ArticleToInfographic: React.FC<ArticleToInfographicProps> = ({ history, on
       }
     } catch (err: any) {
       console.error("Generation Error:", err);
-      if (err.message?.includes("fetch")) {
-          setError("Netzwerkfehler: Die Webseite konnte nicht erreicht werden. Prüfen Sie Ihre Internetverbindung.");
-      } else if (err.message?.includes("safety")) {
-          setError("Inhalt blockiert: Die Webseite enthält möglicherweise sensible Informationen, die nicht verarbeitet werden dürfen.");
+      const errorMessage = err.message?.toLowerCase() || "";
+      
+      if (errorMessage.includes("fetch") || errorMessage.includes("network")) {
+          setError("Netzwerkfehler: Die Webseite konnte nicht erreicht werden. Bitte prüfen Sie Ihre Internetverbindung oder ob die URL korrekt ist.");
+      } else if (errorMessage.includes("safety") || errorMessage.includes("blocked")) {
+          setError("Inhalt blockiert: Die Webseite enthält möglicherweise sensible oder blockierte Informationen, die nicht verarbeitet werden dürfen.");
+      } else if (errorMessage.includes("404") || errorMessage.includes("not found")) {
+          setError("Seite nicht gefunden (404): Die angegebene URL existiert nicht oder ist nicht mehr verfügbar.");
+      } else if (errorMessage.includes("403") || errorMessage.includes("forbidden") || errorMessage.includes("access denied")) {
+          setError("Zugriff verweigert (403): Die Webseite blockiert automatisierte Zugriffe oder erfordert einen Login.");
+      } else if (errorMessage.includes("timeout")) {
+          setError("Zeitüberschreitung: Die Verarbeitung hat zu lange gedauert. Bitte versuchen Sie es mit einem kürzeren Artikel erneut.");
+      } else if (errorMessage.includes("quota") || errorMessage.includes("rate limit") || errorMessage.includes("429")) {
+          setError("API-Limit erreicht: Das Limit für Anfragen wurde überschritten. Bitte versuchen Sie es später erneut.");
       } else {
-          setError(err.message || "Ein unerwarteter Fehler ist aufgetreten. Bitte versuchen Sie es später erneut.");
+          setError(`Ein Fehler ist aufgetreten: ${err.message || "Unerwarteter Fehler. Bitte versuchen Sie es später erneut."}`);
       }
     } finally {
       setLoading(false);
@@ -203,17 +218,17 @@ const ArticleToInfographic: React.FC<ArticleToInfographicProps> = ({ history, on
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                         {SKETCH_STYLES.map(style => (
                             <button
-                                key={style}
+                                key={style.name}
                                 type="button"
-                                onClick={() => setSelectedStyle(style)}
+                                onClick={() => setSelectedStyle(style.name)}
                                 className={`py-2 px-2 rounded-xl font-mono text-[10px] sm:text-[11px] transition-all border whitespace-nowrap truncate ${
-                                    selectedStyle === style 
+                                    selectedStyle === style.name 
                                     ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' 
                                     : 'bg-slate-900/50 text-slate-500 border-white/5 hover:border-white/10 hover:text-slate-300'
                                 }`}
-                                title={style}
+                                title={style.description}
                             >
-                                {style}
+                                {style.name}
                             </button>
                         ))}
                     </div>

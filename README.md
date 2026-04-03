@@ -18,6 +18,14 @@ Link 2 Ink is a visual intelligence platform that transforms GitHub repositories
 
 ## Setup & Local Development
 
+### Windows One-Click Setup (Recommended)
+
+If you are on Windows, you can simply double-click the `start.bat` file. It will:
+- Check for Node.js
+- Create a `.env` file if it doesn't exist
+- Install dependencies if needed
+- Start the development server
+
 ### Environment Configuration
 
 1. Copy `.env.example` to `.env`:
@@ -40,14 +48,6 @@ Link 2 Ink is a visual intelligence platform that transforms GitHub repositories
    npm run dev
    ```
 3. Open `http://localhost:3000` in your browser.
-
-### Windows One-Click Setup
-
-If you are on Windows, you can simply double-click the `start.bat` file. It will:
-- Check for Node.js
-- Create a `.env` file if it doesn't exist
-- Install dependencies if needed
-- Start the development server
 
 ### Docker Setup
 

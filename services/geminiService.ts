@@ -372,6 +372,21 @@ export async function generateArticleInfographic(
         case "Cyberpunk Glow":
             styleGuidelines = `STYLE: Neon-noir aesthetic, intense magenta and electric blue, glitch effects, dark moody atmosphere.`;
             break;
+        case "Steampunk Brass":
+            styleGuidelines = `STYLE: Victorian industrial aesthetic, brass gears, sepia tones, copper pipes, intricate mechanical details.`;
+            break;
+        case "Synthwave 80s":
+            styleGuidelines = `STYLE: Retro-futuristic 80s style, neon grids, synth sunsets, chrome text, vibrant purple and orange.`;
+            break;
+        case "Origami Fold":
+            styleGuidelines = `STYLE: Folded paper aesthetic, sharp geometric shadows, clean pastel colors, 3D papercraft feel.`;
+            break;
+        case "Stained Glass":
+            styleGuidelines = `STYLE: Vibrant mosaic of colored glass panes separated by dark lead lines, luminous and colorful.`;
+            break;
+        case "Chalkboard Sketch":
+            styleGuidelines = `STYLE: Dusty blackboard background with white and colored chalk illustrations, hand-drawn educational feel.`;
+            break;
         default:
              if (style && style !== "Custom") {
                 styleGuidelines = `STYLE: Custom User Style Preference: "${style}".`;
@@ -395,12 +410,15 @@ export async function generateArticleInfographic(
 
     try {
         const response = await ai.models.generateContent({
-            model: 'gemini-3-pro-image-preview',
+            model: 'gemini-3.1-flash-image-preview',
             contents: {
                 parts: [{ text: imagePrompt }],
             },
             config: {
-                responseModalities: [Modality.IMAGE],
+                imageConfig: {
+                    aspectRatio: "3:4",
+                    imageSize: "1K"
+                }
             },
         });
 
