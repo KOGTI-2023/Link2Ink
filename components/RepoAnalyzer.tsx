@@ -32,9 +32,25 @@ const RepoAnalyzer: React.FC<RepoAnalyzerProps> = ({ onNavigate, history, onAddT
   const [session, setSession] = useState<AnalysisSession | null>(null);
   
   const [generating3D, setGenerating3D] = useState(false);
+  const [selected3DStyle, setSelected3DStyle] = useState('Futuristic ISO');
+  const [selectedCameraAngle, setSelectedCameraAngle] = useState('Isometric');
   const [currentFileTree, setCurrentFileTree] = useState<RepoFileTree[] | null>(null);
   const [currentRepoName, setCurrentRepoName] = useState<string>('');
   const [fullScreenImage, setFullScreenImage] = useState<{src: string, alt: string} | null>(null);
+  const [hasApiKey, setHasApiKey] = useState<boolean | null>(null);
+
+  React.useEffect(() => {
+    const checkKey = async () => {
+      const selected = await window.aistudio.hasSelectedApiKey();
+      setHasApiKey(selected);
+    };
+    checkKey();
+  }, []);
+
+  const handleSelectKey = async () => {
+    await window.aistudio.openSelectKey();
+    setHasApiKey(true);
+  };
 
   const parseRepoInput = (input: string): { owner: string, repo: string } | null => {
     const cleanInput = input.trim().replace(/\/$/, '');
@@ -178,8 +194,7 @@ const RepoAnalyzer: React.FC<RepoAnalyzerProps> = ({ onNavigate, history, onAddT
     if (!currentFileTree || !currentRepoName || !session) return;
     setGenerating3D(true);
     try {
-      // Default styles for 3D
-      const data = await generateInfographic(currentRepoName, currentFileTree, "Futuristic ISO", true, "English");
+      const data = await generateInfographic(currentRepoName, currentFileTree, selected3DStyle, true, "English", selectedCameraAngle);
       if (data) {
           // Update current version with the image
           const vid = session.currentVersionId;
@@ -369,6 +384,13 @@ const RepoAnalyzer: React.FC<RepoAnalyzerProps> = ({ onNavigate, history, onAddT
                                              <Download className="w-4 h-4" />
                                          </button>
                                          <button 
+                                            onClick={() => alert("Download placeholder: glTF/OBJ export not yet implemented.")}
+                                            className="p-2 bg-slate-800/80 hover:bg-violet-600 text-white rounded-lg backdrop-blur-md border border-white/10 transition-colors shadow-lg"
+                                            title="Download 3D Model"
+                                         >
+                                             <Box className="w-4 h-4" />
+                                         </button>
+                                         <button 
                                             onClick={() => setFullScreenImage({src: `data:image/png;base64,${activeVersion.imageData3D!}`, alt: '3D View'})}
                                             className="p-2 bg-slate-800/80 hover:bg-white/20 text-white rounded-lg backdrop-blur-md border border-white/10 transition-colors shadow-lg"
                                             title="Fullscreen"
@@ -384,14 +406,43 @@ const RepoAnalyzer: React.FC<RepoAnalyzerProps> = ({ onNavigate, history, onAddT
                                      <span className="text-xs font-mono text-fuchsia-300 animate-pulse">RENDERING...</span>
                                  </div>
                              ) : (
-                                 <button 
-                                    onClick={handleGenerate3D}
-                                    className="flex flex-col items-center gap-3 p-6 rounded-2xl hover:bg-white/5 transition-all group"
-                                 >
-                                     <Box className="w-8 h-8 text-slate-600 group-hover:text-fuchsia-400 transition-colors" />
-                                     <span className="text-xs font-mono text-slate-500 group-hover:text-white">Generate Hologram</span>
-                                 </button>
-                             )}
+                                 <div className="flex flex-col items-center gap-4 p-6 w-full max-w-xs">
+                                     <div className="w-full space-y-2">
+                                         <label className="text-[10px] text-slate-500 font-mono">3D STYLE</label>
+                                         <select 
+                                            value={selected3DStyle} 
+                                            onChange={(e) => setSelected3DStyle(e.target.value)}
+                                            className="w-full bg-slate-950 border border-white/10 rounded-lg p-2 text-xs text-white font-mono"
+                                         >
+                                             <option value="Futuristic ISO">Futuristic ISO - High-tech blueprint look, glass textures, depth and layering.</option>
+                                             <option value="Cyberpunk Glow">Cyberpunk Glow - Neon-noir aesthetic, intense magenta and electric blue, glitch effects.</option>
+                                             <option value="Claymation">Claymation - Soft, rounded shapes, matte clay textures, playful and tactile.</option>
+                                             <option value="Wireframe">Wireframe - Minimalist geometric lines, transparent surfaces, technical structure.</option>
+                                         </select>
+                                     </div>
+                                     <div className="w-full space-y-2">
+                                         <label className="text-[10px] text-slate-500 font-mono">CAMERA ANGLE</label>
+                                         <select 
+                                            value={selectedCameraAngle} 
+                                            onChange={(e) => setSelectedCameraAngle(e.target.value)}
+                                            className="w-full bg-slate-950 border border-white/10 rounded-lg p-2 text-xs text-white font-mono"
+                                         >
+                                             <option value="Isometric">Isometric</option>
+                                             <option value="Top-Down">Top-Down</option>
+                                             <option value="Front-Facing">Front-Facing</option>
+                                             <option value="Dynamic">Dynamic</option>
+                                         </select>
+                                     </div>
+                                     <button 
+                                        onClick={handleGenerate3D}
+                                        className="flex flex-col items-center gap-3 p-6 rounded-2xl hover:bg-white/5 transition-all group w-full"
+                                     >
+                                         <Box className="w-8 h-8 text-slate-600 group-hover:text-fuchsia-400 transition-colors" />
+                                         <span className="text-xs font-mono text-slate-500 group-hover:text-white">Generate Hologram</span>
+                                     </button>
+                                 </div>
+                              )
+                             }
                         </div>
 
                     </div>

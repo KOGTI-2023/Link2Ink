@@ -71,6 +71,20 @@ const ArticleToInfographic: React.FC<ArticleToInfographicProps> = ({ history, on
   
   // Viewer State
   const [fullScreenImage, setFullScreenImage] = useState<{src: string, alt: string} | null>(null);
+  const [hasApiKey, setHasApiKey] = useState<boolean | null>(null);
+
+  React.useEffect(() => {
+    const checkKey = async () => {
+      const selected = await window.aistudio.hasSelectedApiKey();
+      setHasApiKey(selected);
+    };
+    checkKey();
+  }, []);
+
+  const handleSelectKey = async () => {
+    await window.aistudio.openSelectKey();
+    setHasApiKey(true);
+  };
 
   const addToHistory = (url: string, image: string, cites: Citation[]) => {
       let title = url;
@@ -314,12 +328,22 @@ const ArticleToInfographic: React.FC<ArticleToInfographicProps> = ({ history, on
 
             <button
                 type="submit"
-                disabled={loading || !urlInput.trim()}
+                disabled={loading || !urlInput.trim() || hasApiKey === false}
                 className="w-full py-5 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 text-emerald-300 rounded-2xl font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3 font-mono text-base tracking-wider hover:shadow-neon-emerald"
             >
                 {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Sparkles className="w-5 h-5" />}
-                {loading ? "VERARBEITUNG..." : "INFOGRAFIK_GENERIEREN"}
+                {loading ? "VERARBEITUNG..." : hasApiKey === false ? "API-SCHLÜSSEL ERFORDERLICH" : "INFOGRAFIK_GENERIEREN"}
             </button>
+            {hasApiKey === false && (
+                <button
+                    type="button"
+                    onClick={handleSelectKey}
+                    className="w-full py-3 bg-white/5 hover:bg-white/10 border border-white/10 text-white rounded-xl font-bold transition-all flex items-center justify-center gap-2 font-mono text-sm"
+                >
+                    <Sparkles className="w-4 h-4" />
+                    API-Schlüssel auswählen (Erforderlich für Bildgenerierung)
+                </button>
+            )}
          </form>
       </div>
 

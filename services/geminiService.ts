@@ -99,7 +99,8 @@ export async function generateInfographic(
   fileTree: RepoFileTree[], 
   style: string, 
   is3D: boolean = false,
-  language: string = "English"
+  language: string = "English",
+  cameraAngle: string = "Isometric"
 ): Promise<string | null> {
   const ai = getAiClient();
   // Summarize architecture for the image prompt
@@ -110,8 +111,8 @@ export async function generateInfographic(
 
   if (is3D) {
       // OVERRIDE standard styles for a specific "Tabletop Model" look
-      styleGuidelines = `VISUAL STYLE: Photorealistic Miniature Diorama. The data flow should look like a complex, glowing 3D printed physical model sitting on a dark, reflective executive desk.`;
-      dimensionPrompt = `PERSPECTIVE & RENDER: Isometric view with TILT-SHIFT depth of field (blurry foreground/background) to make it look like a small, tangible object on a table. Cinematic volumetric lighting. Highly detailed, 'octane render' style.`;
+      styleGuidelines = `VISUAL STYLE: Photorealistic Miniature Diorama. The data flow should look like a complex, glowing 3D printed physical model sitting on a dark, reflective executive desk. Style: ${style}.`;
+      dimensionPrompt = `PERSPECTIVE & RENDER: ${cameraAngle} view with TILT-SHIFT depth of field (blurry foreground/background) to make it look like a small, tangible object on a table. Cinematic volumetric lighting. Highly detailed, 'octane render' style.`;
   } else {
       // Standard 2D styles or Custom
       switch (style) {
